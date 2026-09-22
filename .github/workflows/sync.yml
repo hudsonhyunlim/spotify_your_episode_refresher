@@ -39,6 +39,15 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          # How many episodes to keep in Your Episodes.
+          MAX_EPISODES: '50'
+          # At most this many from any one show, so daily publishers don't take
+          # most of the list and weekly shows still surface. 0 disables the cap.
+          MAX_PER_SHOW: '3'
+          # Treat an episode this far through as finished, on top of Spotify's own
+          # fully_played flag. 90% played stays in the list; 95%+ is pruned.
+          # Set to 0 to rely on the flag alone.
+          PLAYED_THRESHOLD_PERCENT: '95'
         run: node src/sync.ts
 
       - name: Commit state.json

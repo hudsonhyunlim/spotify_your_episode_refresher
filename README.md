@@ -11,10 +11,9 @@ Each run:
 
 1. reads every show you follow,
 2. looks at the most recent episodes of each,
-3. discards anything you've finished,
-4. keeps the newest `MAX_EPISODES` (default 20),
-5. adds what's missing, removes what it previously added once it's played or has fallen out
-   of the top N,
+3. optionally discards anything you've finished (`SKIP_PLAYED`),
+4. keeps the newest `MAX_EPISODES`, taking at most `MAX_PER_SHOW` from any one show,
+5. adds what's missing, removes what it previously added once it falls out of that set,
 6. never touches an episode you saved yourself.
 
 ## Setup
@@ -86,7 +85,10 @@ All optional, set as environment variables (or `env:` entries in `.github/workfl
 | Variable | Default | Meaning |
 |---|---|---|
 | `MAX_EPISODES` | `20` | How many episodes to keep in Your Episodes |
-| `EPISODES_PER_SHOW` | `5` | How far back to look in each followed show |
+| `MAX_PER_SHOW` | `0` | At most this many from any one show; `0` disables the cap |
+| `SKIP_PLAYED` | `1` | `0` keeps finished episodes, ageing them out by release date |
+| `PLAYED_THRESHOLD_PERCENT` | `0` | Count an episode this far through as finished; `0` uses `fully_played` alone |
+| `EPISODES_PER_SHOW` | `5` | How far back to look in each followed show (API maximum 50) |
 | `DRY_RUN` | unset | `1` plans without changing anything |
 | `REORDER` | `1` | `0` disables the re-ordering pass |
 | `VERIFY_RESUME_POINTS` | `1` | `0` trusts the show listing's played state (see below) |
@@ -122,13 +124,44 @@ older ones, each run also re-adds the script-added set in order when it has drif
 position lives on your account rather than on library membership, so this round trip doesn't
 lose your place. Set `REORDER=0` to turn it off.
 
+## Show diversity
+
+A list ranked purely by release date is dominated by whoever publishes most often. With ~76
+followed shows, the first run filled 20 slots from only 16 shows, four of them daily news
+podcasts taking two slots each — and 60 followed shows never appeared at all.
+
+`MAX_PER_SHOW` caps each show's share, trading a little recency for breadth. At
+`MAX_EPISODES=50` and `MAX_PER_SHOW=3` the list holds at least 17 distinct shows and in
+practice many more. `MAX_PER_SHOW=1` maximises breadth: every slot is a different show.
+
+## What counts as finished
+
+By default (`SKIP_PLAYED=1`) finished episodes are dropped from the selection, so playing one
+causes the next run to remove it and backfill with the next newest.
+
+"Finished" means Spotify's own `resume_point.fully_played` flag. **Partially played episodes
+are kept** — an episode you are 20% or 90% through stays in the list, which is usually what you
+want: you have not finished it.
+
+That flag is binary, though, and Spotify does not necessarily set it for an episode you are 99%
+through. `PLAYED_THRESHOLD_PERCENT` adds a proportional check on top: at `95`, anything past
+95% of its duration is treated as finished, while 90% still stays. Set it to `0` to rely on the
+flag alone. Episodes whose duration Spotify does not report fall back to the flag rather than
+being wrongly dropped.
+
+`SKIP_PLAYED=0` turns the whole filter off — the list becomes simply the newest N regardless of
+what you have listened to, and finished episodes stay until they age out by release date. That
+also skips the `resume_point` verification below entirely, since played state can no longer
+change the outcome.
+
 ## Played-state accuracy
 
 `GET /shows/{id}/episodes` is known to return stale `resume_point` values, while
 `GET /episodes/{id}` is accurate. So the script re-checks played state individually for the
 shortlisted episodes and everything it currently tracks — roughly 20–40 extra calls per run.
 `VERIFY_RESUME_POINTS=0` skips this, at the cost of played episodes occasionally lingering for
-a run or two.
+a run or two. It is also skipped automatically when `SKIP_PLAYED=0`, since played state cannot
+change the outcome in that mode.
 
 ## Refresh token expiry
 

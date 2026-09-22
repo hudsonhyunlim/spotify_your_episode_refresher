@@ -14,6 +14,7 @@ export interface SimplifiedEpisode {
   id: string
   uri: string
   name: string
+  duration_ms: number
   release_date: string
   release_date_precision: 'year' | 'month' | 'day'
   resume_point?: ResumePoint
@@ -50,7 +51,11 @@ export interface Candidate {
   showName: string
   /** Always a full `YYYY-MM-DD`, normalised from coarser precisions. */
   releaseDate: string
+  /** Spotify's own "you finished this" flag. */
   fullyPlayed: boolean
+  /** 0 when unknown, which disables the proportional played check for this episode. */
+  durationMs: number
+  resumePositionMs: number
 }
 
 /** One episode this script added to Your Episodes, and is therefore allowed to remove. */
@@ -101,6 +106,7 @@ export function asEpisode(value: unknown, what: string): SimplifiedEpisode {
     id: value.id,
     uri: value.uri,
     name: typeof value.name === 'string' ? value.name : '(untitled)',
+    duration_ms: typeof value.duration_ms === 'number' ? value.duration_ms : 0,
     release_date: typeof value.release_date === 'string' ? value.release_date : '',
     release_date_precision:
       precision === 'year' || precision === 'month' ? precision : 'day',

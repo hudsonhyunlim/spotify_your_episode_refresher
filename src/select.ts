@@ -39,19 +39,63 @@ function byNewestRelease(a: Candidate, b: Candidate): number {
   return a.uri < b.uri ? -1 : a.uri > b.uri ? 1 : 0
 }
 
-/** Drop finished episodes, then keep the newest `maxEpisodes`. */
+/**
+ * Whether an episode counts as done with.
+ *
+ * Spotify's own `fully_played` is binary and it does not necessarily set it for an
+ * episode you are 99% through, so `playedThreshold` adds a proportional check:
+ * anything past that fraction of its duration is treated as finished. A threshold
+ * of 0 disables it and leaves `fully_played` as the only signal. Episodes with an
+ * unknown duration fall back to the flag alone rather than being wrongly dropped.
+ */
+export function isFinished(candidate: Candidate, playedThreshold: number): boolean {
+  if (candidate.fullyPlayed) return true
+  if (playedThreshold <= 0 || candidate.durationMs <= 0) return false
+  return candidate.resumePositionMs / candidate.durationMs >= playedThreshold
+}
+
+/**
+ * Pick the episodes that should be in Your Episodes, newest release first.
+ *
+ * `maxPerShow` exists because a recency-ranked list is dominated by whoever
+ * publishes most often: with daily news shows in the mix, a handful of them will
+ * otherwise take most of the slots and weekly shows never surface. Capping each
+ * show trades a little recency for breadth.
+ */
 export function selectEpisodes({
   candidates,
   maxEpisodes,
+  maxPerShow = 0,
+  skipPlayed = true,
+  playedThreshold = 0,
 }: {
   candidates: readonly Candidate[]
   maxEpisodes: number
+  /** At most this many episodes from any one show. 0 means no cap. */
+  maxPerShow?: number
+  /** When false, finished episodes stay eligible and age out by release date instead. */
+  skipPlayed?: boolean
+  /** Fraction of duration past which an episode counts as finished. 0 disables. */
+  playedThreshold?: number
 }): Candidate[] {
-  return candidates
-    .filter((candidate) => !candidate.fullyPlayed)
+  const limit = Math.max(0, maxEpisodes)
+  const ranked = candidates
+    .filter((candidate) => !skipPlayed || !isFinished(candidate, playedThreshold))
     .slice()
     .sort(byNewestRelease)
-    .slice(0, Math.max(0, maxEpisodes))
+
+  if (maxPerShow <= 0) return ranked.slice(0, limit)
+
+  const takenPerShow = new Map<string, number>()
+  const selected: Candidate[] = []
+  for (const candidate of ranked) {
+    if (selected.length >= limit) break
+    const taken = takenPerShow.get(candidate.showId) ?? 0
+    if (taken >= maxPerShow) continue
+    takenPerShow.set(candidate.showId, taken + 1)
+    selected.push(candidate)
+  }
+  return selected
 }
 
 export interface ChangePlan {
