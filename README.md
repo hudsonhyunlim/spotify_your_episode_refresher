@@ -1,7 +1,7 @@
 # spotify_your_episode_refresher
 
 Keeps Spotify **Your Episodes** stocked with the newest unplayed episodes from every podcast
-you follow, refreshed hourly.
+you follow, refreshed every few hours.
 
 The Apple Watch app and most car head units have no "latest episodes" view, but both show
 Your Episodes, and playback position syncs through your account. So this turns Your Episodes
@@ -37,8 +37,8 @@ Note the **client ID** and **client secret**. The app stays in Development Mode,
 
 ### 2. Get a refresh token
 
-This is the **only** part that has to happen on your own machine. Everything else — the hourly
-sync, manual runs, changing settings — runs on GitHub. OAuth needs a browser already signed in
+This is the **only** part that has to happen on your own machine. Everything else — the
+scheduled sync, manual runs, changing settings — runs on GitHub. OAuth needs a browser already signed in
 to your Spotify account so *you* can click Agree, which no CI runner can do.
 
 Two ways to do it. Both produce the same token. Pick [**2b**](#2b-windows--no-tools-installed)
@@ -271,25 +271,100 @@ If you don't, use [2b](#2b-windows--no-tools-installed) — browser and PowerShe
 Separately, if Spotify ever rotates the token mid-life, the run logs a loud warning with the
 new value — update the secret when you see it.
 
-## Cost and scheduling
+## Schedule
 
-The hourly job runs on GitHub-hosted runners. Private repositories get 2,000 Actions
-minutes/month on Free and 3,000 on Pro/Team, and **every job is rounded up to a whole minute**,
-so ~730 runs/month is what matters, not the seconds.
+The sync runs **every 4 hours**, set by the `cron` line near the top of
+`.github/workflows/sync.yml`:
 
-That's why this project has **nothing in `dependencies`** and **no build step**: Node runs the
-TypeScript directly via native type stripping, so the hourly job skips `npm ci` entirely and
-finishes inside one billable minute (~730 min/month, about a third of the Free allowance).
-Adding a single runtime dependency, or a `tsc` build, would roughly double that. Type checking
-and linting happen in `ci.yml`, which only runs on pushes and pull requests.
+```yaml
+on:
+  schedule:
+    - cron: '7 */4 * * *'
+```
 
-Two things to know about `on: schedule`:
+That fires at **00:07, 04:07, 08:07, 12:07, 16:07 and 20:07 UTC** — six runs a day.
 
-- It's **best effort**. Runs get delayed under load and are occasionally dropped. Harmless
-  here — the next run reconciles from scratch.
-- Scheduled workflows are **auto-disabled after 60 days with no repository activity**. The
-  hourly `state.json` commit resets that clock whenever the list actually changes. If it ever
-  does get disabled, re-enable it in the Actions tab and push any commit.
+### Changing it
+
+Edit that one line on GitHub — open the file, click the pencil, commit to `main`. It takes
+effect on the next run; there's nothing to redeploy.
+
+| You want | `cron` | Runs/day |
+|---|---|---|
+| Hourly | `7 * * * *` | 24 |
+| Every 2 hours | `7 */2 * * *` | 12 |
+| **Every 4 hours (current)** | `7 */4 * * *` | 6 |
+| Every 6 hours | `7 */6 * * *` | 4 |
+| Twice a day | `7 7,19 * * *` | 2 |
+| Specific hours | `7 1,5,9,13,17,21 * * *` | 6, at those UTC hours |
+
+The five fields are `minute hour day-of-month month day-of-week`.
+
+### Two things that catch people out
+
+**It's UTC, with no timezone option.** So local run times shift by an hour when daylight saving
+changes. If you want a run to land at a particular local time — say just before a commute —
+convert to UTC and list the hours explicitly. For US Pacific (UTC−7 in summer),
+`7 */4 * * *` lands at 5:07pm, 9:07pm, 1:07am, 5:07am, 9:07am and 1:07pm local.
+
+**It's best effort.** GitHub queues scheduled runs and they can be delayed by several minutes
+or occasionally dropped altogether, especially near the top of the hour — hence `:07`. This is
+harmless here: every run recomputes the whole desired state, so a missed run just means the
+next one does the work. You can always trigger one by hand from the Actions tab.
+
+Scheduled workflows are also **auto-disabled after 60 days with no repository activity**. The
+`state.json` commit resets that clock whenever the list actually changes. If it ever does get
+disabled, re-enable it in the Actions tab and push any commit.
+
+## Cost
+
+The job runs on GitHub-hosted runners. Private repositories get 2,000 Actions minutes/month on
+Free and 3,000 on Pro/Team, and **every job is rounded up to a whole minute** — so the number
+of runs is what matters, not the seconds. A run takes about 20 seconds.
+
+| Schedule | Runs/month | Billable min/month | % of Free tier |
+|---|---|---|---|
+| Hourly | ~730 | ~730 | 37% |
+| Every 2 hours | ~365 | ~365 | 18% |
+| **Every 4 hours (current)** | ~182 | ~182 | **9%** |
+| Every 6 hours | ~120 | ~120 | 6% |
+
+A run takes about 30 seconds end to end, so there is comfortable margin before it would tip
+into a second billable minute and double these figures. Those numbers cover the sync job only;
+`ci.yml` adds a minute or two whenever code is pushed, which is rare once the project is
+settled.
+
+### Spotify's limits
+
+Two separate things, and only one of them depends on how often the sync runs.
+
+**The rate limit** is a rolling 30-second window, so it is unaffected by the schedule: each run
+makes the same burst of calls whether that happens twice a day or twice an hour. A full run is
+around 130–150 calls in about 20 seconds and has not been rate limited in practice. If it ever
+is, the client honours `Retry-After` and backs off, and gives up cleanly rather than stalling
+the runner when the wait is unreasonable — a skipped run costs nothing.
+
+**The Development Mode quota** is counted per developer account against your daily call total,
+which *does* scale with the schedule:
+
+| Schedule | Calls/day (~140 per run) |
+|---|---|
+| Hourly | ~3,400 |
+| Every 2 hours | ~1,700 |
+| **Every 4 hours (current)** | **~850** |
+
+To cut calls per run rather than runs per day: `VERIFY_RESUME_POINTS=0` saves roughly one call
+per tracked episode (~50 here), at the cost of played episodes lingering a run or two. Most of
+the rest is one call per followed show, which is unavoidable since the February 2026 migration
+removed the batch lookups.
+
+### Why it fits in one billable minute
+
+This is why the project has **nothing in `dependencies`** and **no build step**: Node runs the
+TypeScript directly via native type stripping, so the job skips `npm ci` entirely and finishes
+inside one billable minute. Adding a single runtime dependency, or a `tsc` build, would push it
+over 60 seconds and double every figure above. Type checking and linting happen in `ci.yml`,
+which only runs on pushes and pull requests.
 
 ## Development
 
