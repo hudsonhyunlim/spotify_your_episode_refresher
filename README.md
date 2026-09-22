@@ -37,16 +37,12 @@ Note the **client ID** and **client secret**. The app stays in Development Mode,
 
 ### 2. Get a refresh token
 
-Runs on your own machine — it needs a browser signed in to the Spotify account, and a listener
-on your `127.0.0.1:8888`. It cannot run on CI.
+This is the **only** part that has to happen on your own machine. Everything else — the hourly
+sync, manual runs, changing settings — runs on GitHub. OAuth needs a browser already signed in
+to your Spotify account so *you* can click Agree, which no CI runner can do.
 
-```sh
-git clone <this repo> && cd spotify_your_episode_refresher
-SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... npm run auth
-```
-
-Your browser opens, you approve the three scopes, and the script prints your refresh token
-along with the exact `gh secret set` commands to run.
+Two ways to do it. Both produce the same token. Pick [**2b**](#2b-windows--no-tools-installed)
+if you don't have Node and git and don't want to install them.
 
 Scopes requested, and why:
 
@@ -56,7 +52,82 @@ Scopes requested, and why:
 | `user-library-modify` | adding and removing episodes |
 | `user-read-playback-position` | `resume_point`, i.e. knowing what you've played |
 
+#### 2a. With Node and git
+
+```sh
+git clone <this repo> && cd spotify_your_episode_refresher
+SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... npm run auth
+```
+
+Your browser opens, you approve the three scopes, and the script prints your refresh token
+along with the exact `gh secret set` commands to run.
+
+#### 2b. Windows — no tools installed
+
+Browser plus built-in PowerShell. Nothing to install.
+
+The trick: **the `127.0.0.1:8888` listener isn't actually required.** Spotify redirects your
+*browser* there with the authorization code in the query string. With nothing listening the
+browser shows an error page — but the code is still in the address bar, which is all you need.
+The redirect URI must still be registered in the dashboard, because Spotify validates it on
+both requests below.
+
+**Authorize.** Paste into your address bar, replacing `YOUR_CLIENT_ID`:
+
+```
+https://accounts.spotify.com/authorize?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=http%3A%2F%2F127.0.0.1%3A8888%2Fcallback&scope=user-library-read%20user-library-modify%20user-read-playback-position
+```
+
+Click **Agree**. The browser then fails to load `127.0.0.1:8888` — *"This site can't be
+reached" is the expected outcome.* Look at the address bar:
+
+```
+http://127.0.0.1:8888/callback?code=AQDx7...very-long-string...
+```
+
+Copy everything after `code=`. It is single-use and short-lived, so do the next step promptly;
+if it expires, just reload the authorize URL for a fresh one.
+
+**Exchange it.** Open PowerShell (Start → type `powershell` → Enter) and paste:
+
+```powershell
+$clientId     = 'YOUR_CLIENT_ID'
+$clientSecret = 'YOUR_CLIENT_SECRET'
+$code         = 'THE_CODE_FROM_THE_ADDRESS_BAR'
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($clientId):$($clientSecret)"))
+
+$resp = Invoke-RestMethod -Method Post -Uri 'https://accounts.spotify.com/api/token' `
+  -Headers @{ Authorization = "Basic $basic" } `
+  -Body @{
+      grant_type   = 'authorization_code'
+      code         = $code
+      redirect_uri = 'http://127.0.0.1:8888/callback'
+  }
+
+$resp.refresh_token
+```
+
+It prints your refresh token. The `SecurityProtocol` line matters — Windows PowerShell 5.1 can
+still default to TLS 1.0, which Spotify rejects.
+
+| Error | Fix |
+|---|---|
+| `invalid_grant` | The code expired or was already used. Reload the authorize URL for a new one. |
+| `invalid_client` | Client ID or secret wrong, or has a stray space or quote. |
+| `Invalid redirect URI` | The dashboard URI doesn't match `http://127.0.0.1:8888/callback` exactly. |
+| `Could not create SSL/TLS secure channel` | You skipped the `SecurityProtocol` line. |
+
+To see a full error body, wrap the call in `try { … } catch { $_.ErrorDetails.Message }`.
+
 ### 3. Set the repository secrets
+
+In the browser: repo → **Settings** → **Secrets and variables** → **Actions** → **New
+repository secret**, three times — `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
+`SPOTIFY_REFRESH_TOKEN`.
+
+Or with the `gh` CLI:
 
 ```sh
 gh secret set SPOTIFY_CLIENT_ID
@@ -64,19 +135,27 @@ gh secret set SPOTIFY_CLIENT_SECRET
 gh secret set SPOTIFY_REFRESH_TOKEN
 ```
 
+Prefer the interactive prompt over `--body '...'`, which puts the secret into your shell
+history. Secrets are repository-wide, not per-branch.
+
 ### 4. Check the plan before anything is written
+
+On GitHub: **Actions** → **Sync Your Episodes** → **Run workflow**, and tick the box labelled
+*"Plan only, change nothing"* (that is the `dry_run` input — GitHub shows an input's
+description as its label). Expand the **Sync** step to read the planned selection.
+
+Locally, if you have Node:
 
 ```sh
 DRY_RUN=1 npm start
 ```
 
-This prints the top 20 it would maintain, plus every planned add and remove, and changes
-nothing — not your library, not `state.json`. Worth eyeballing once against what you'd pick
-by hand.
+Either way it prints the episodes it would maintain, plus every planned add and remove, and
+changes nothing — not your library, not `state.json`. Worth reading once against what you'd
+pick by hand.
 
-Then the same thing on Actions: run the **Sync Your Episodes** workflow manually with
-`dry_run` checked. That proves the secrets and the runner work before anything touches your
-library.
+Note the **Run workflow** button only appears once the workflow file is on the default branch;
+`schedule` likewise only fires from the default branch.
 
 ## Configuration
 
@@ -130,9 +209,16 @@ A list ranked purely by release date is dominated by whoever publishes most ofte
 followed shows, the first run filled 20 slots from only 16 shows, four of them daily news
 podcasts taking two slots each — and 60 followed shows never appeared at all.
 
-`MAX_PER_SHOW` caps each show's share, trading a little recency for breadth. At
-`MAX_EPISODES=50` and `MAX_PER_SHOW=3` the list holds at least 17 distinct shows and in
-practice many more. `MAX_PER_SHOW=1` maximises breadth: every slot is a different show.
+`MAX_PER_SHOW` caps each show's share, trading a little recency for breadth. The workflow uses
+`MAX_EPISODES=50` with `MAX_PER_SHOW=2`, so the list holds at least 25 distinct shows and in
+practice more, since most shows contribute only one episode.
+
+| `MAX_PER_SHOW` | Minimum distinct shows in 50 slots | Character |
+|---|---|---|
+| `1` | 50 | Maximum breadth; a daily show's older episode never appears |
+| `2` (current) | 25 | Breadth, with room for a second episode from busy shows |
+| `3` | 17 | Leans toward daily publishers |
+| `0` | no floor | Pure recency; ~16 of 76 shows in practice |
 
 ## What counts as finished
 
@@ -169,12 +255,18 @@ change the outcome in that mode.
 token does not extend that. When it lapses, the workflow fails with a clear `invalid_grant`
 message and exit code 2, and GitHub emails you about the failed run.
 
-To recover, repeat step 2 and update the secret:
+To recover, repeat [step 2](#2-get-a-refresh-token) and update the `SPOTIFY_REFRESH_TOKEN`
+secret. Nothing else changes — the Spotify app, the client ID and the secret all stay as they
+are.
+
+If you have Node:
 
 ```sh
 SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... npm run auth
 gh secret set SPOTIFY_REFRESH_TOKEN
 ```
+
+If you don't, use [2b](#2b-windows--no-tools-installed) — browser and PowerShell, no installs.
 
 Separately, if Spotify ever rotates the token mid-life, the run logs a loud warning with the
 new value — update the secret when you see it.
