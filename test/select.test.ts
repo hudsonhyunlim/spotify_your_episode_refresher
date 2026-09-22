@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
   URIS_PER_REQUEST,
   chunk,
+  isFinished,
   normalizeReleaseDate,
   planChanges,
   planReorder,
@@ -20,6 +21,8 @@ function episode(overrides: Partial<Candidate> & { uri: string }): Candidate {
     showName: 'A Show',
     releaseDate: '2026-09-01',
     fullyPlayed: false,
+    durationMs: 60 * 60 * 1000,
+    resumePositionMs: 0,
     ...overrides,
   }
 }
@@ -123,6 +126,133 @@ test('selectEpisodes does not mutate its input', () => {
     candidates.map((c) => c.uri),
     before,
   )
+})
+
+test('maxPerShow caps how many slots one show can take', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:d1', showId: 'daily', releaseDate: '2026-09-22' }),
+    episode({ uri: 'spotify:episode:d2', showId: 'daily', releaseDate: '2026-09-21' }),
+    episode({ uri: 'spotify:episode:d3', showId: 'daily', releaseDate: '2026-09-20' }),
+    episode({ uri: 'spotify:episode:d4', showId: 'daily', releaseDate: '2026-09-19' }),
+    episode({ uri: 'spotify:episode:w1', showId: 'weekly', releaseDate: '2026-09-15' }),
+  ]
+
+  // Without a cap the daily show crowds the weekly one out entirely.
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 4 }).map((c) => c.showId),
+    ['daily', 'daily', 'daily', 'daily'],
+  )
+
+  const capped = selectEpisodes({ candidates, maxEpisodes: 4, maxPerShow: 3 })
+  assert.deepEqual(capped.map((c) => c.uri), [
+    'spotify:episode:d1',
+    'spotify:episode:d2',
+    'spotify:episode:d3',
+    'spotify:episode:w1',
+  ])
+})
+
+test('maxPerShow keeps the newest episodes of each show, and overall order', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:a-old', showId: 'a', releaseDate: '2026-09-01' }),
+    episode({ uri: 'spotify:episode:a-new', showId: 'a', releaseDate: '2026-09-22' }),
+    episode({ uri: 'spotify:episode:b-mid', showId: 'b', releaseDate: '2026-09-10' }),
+  ]
+  const selected = selectEpisodes({ candidates, maxEpisodes: 10, maxPerShow: 1 })
+  assert.deepEqual(selected.map((c) => c.uri), [
+    'spotify:episode:a-new',
+    'spotify:episode:b-mid',
+  ])
+})
+
+test('maxPerShow of 0 or less means no cap', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:x1', showId: 's', releaseDate: '2026-09-02' }),
+    episode({ uri: 'spotify:episode:x2', showId: 's', releaseDate: '2026-09-01' }),
+  ]
+  assert.equal(selectEpisodes({ candidates, maxEpisodes: 10, maxPerShow: 0 }).length, 2)
+  assert.equal(selectEpisodes({ candidates, maxEpisodes: 10 }).length, 2)
+})
+
+test('skipPlayed false keeps finished episodes in the selection', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:played', releaseDate: '2026-09-22', fullyPlayed: true }),
+    episode({ uri: 'spotify:episode:fresh', releaseDate: '2026-09-21' }),
+  ]
+
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, skipPlayed: true }).map((c) => c.uri),
+    ['spotify:episode:fresh'],
+  )
+  // Played episodes now age out by release date rather than by being listened to.
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, skipPlayed: false }).map((c) => c.uri),
+    ['spotify:episode:played', 'spotify:episode:fresh'],
+  )
+})
+
+test('maxPerShow and skipPlayed compose', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:p1', showId: 'a', releaseDate: '2026-09-22', fullyPlayed: true }),
+    episode({ uri: 'spotify:episode:p2', showId: 'a', releaseDate: '2026-09-21' }),
+    episode({ uri: 'spotify:episode:p3', showId: 'a', releaseDate: '2026-09-20' }),
+    episode({ uri: 'spotify:episode:b1', showId: 'b', releaseDate: '2026-09-19' }),
+  ]
+  // A played episode still consumes one of the show's slots when it is not filtered.
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, maxPerShow: 2, skipPlayed: false }).map(
+      (c) => c.uri,
+    ),
+    ['spotify:episode:p1', 'spotify:episode:p2', 'spotify:episode:b1'],
+  )
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, maxPerShow: 2, skipPlayed: true }).map(
+      (c) => c.uri,
+    ),
+    ['spotify:episode:p2', 'spotify:episode:p3', 'spotify:episode:b1'],
+  )
+})
+
+test('playedThreshold treats a nearly-finished episode as finished', () => {
+  const hour = 60 * 60 * 1000
+  const candidates = [
+    // 99% through: not flagged by Spotify, but effectively done with.
+    episode({ uri: 'spotify:episode:almost', durationMs: hour, resumePositionMs: hour * 0.99 }),
+    // 90% through: still worth keeping.
+    episode({ uri: 'spotify:episode:mostly', durationMs: hour, resumePositionMs: hour * 0.9 }),
+  ]
+
+  // Without a threshold, Spotify's flag is the only signal and both survive.
+  assert.equal(selectEpisodes({ candidates, maxEpisodes: 10 }).length, 2)
+
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, playedThreshold: 0.95 }).map((c) => c.uri),
+    ['spotify:episode:mostly'],
+  )
+})
+
+test('playedThreshold is exclusive of episodes exactly at the boundary', () => {
+  const hour = 60 * 60 * 1000
+  const atBoundary = episode({
+    uri: 'spotify:episode:edge',
+    durationMs: hour,
+    resumePositionMs: hour * 0.95,
+  })
+  assert.equal(isFinished(atBoundary, 0.95), true, 'at the threshold counts as finished')
+  assert.equal(isFinished(atBoundary, 0.96), false)
+})
+
+test('an unknown duration falls back to the fully_played flag', () => {
+  // Never drop an episode just because Spotify omitted its duration.
+  const unknown = episode({ uri: 'spotify:episode:nodur', durationMs: 0, resumePositionMs: 999 })
+  assert.equal(isFinished(unknown, 0.95), false)
+  assert.equal(isFinished({ ...unknown, fullyPlayed: true }, 0.95), true)
+})
+
+test('fully_played still wins regardless of threshold', () => {
+  const played = episode({ uri: 'spotify:episode:done', fullyPlayed: true, resumePositionMs: 0 })
+  assert.equal(isFinished(played, 0), true)
+  assert.equal(isFinished(played, 0.95), true)
 })
 
 test('planChanges adds unsaved selections oldest first', () => {

@@ -21,7 +21,13 @@ import type { Candidate, SavedEpisode, SavedShow, SimplifiedEpisode, UserProfile
 
 const config = {
   maxEpisodes: Number(process.env.MAX_EPISODES ?? 20),
+  /** At most this many episodes from any one show. 0 means no cap. */
+  maxPerShow: Number(process.env.MAX_PER_SHOW ?? 0),
   episodesPerShow: Number(process.env.EPISODES_PER_SHOW ?? 5),
+  /** When 0, finished episodes stay in the list and age out by release date. */
+  skipPlayed: process.env.SKIP_PLAYED !== '0',
+  /** Treat an episode this far through as finished. 0 relies on `fully_played` alone. */
+  playedThresholdPercent: Number(process.env.PLAYED_THRESHOLD_PERCENT ?? 0),
   dryRun: process.env.DRY_RUN === '1',
   reorder: process.env.REORDER !== '0',
   verifyResumePoints: process.env.VERIFY_RESUME_POINTS !== '0',
@@ -45,6 +51,8 @@ function toCandidate(episode: SimplifiedEpisode, showId: string, showName: strin
     showName,
     releaseDate: normalizeReleaseDate(episode.release_date, episode.release_date_precision),
     fullyPlayed: episode.resume_point?.fully_played === true,
+    durationMs: episode.duration_ms,
+    resumePositionMs: episode.resume_point?.resume_position_ms ?? 0,
   }
 }
 
@@ -116,13 +124,12 @@ async function verifyResumePoints(
   const query: Record<string, string | number> = {}
   if (market !== undefined) query.market = market
 
-  const corrected = new Map<string, boolean>()
+  const corrected = new Map<string, SimplifiedEpisode>()
   for (const uri of urisToCheck) {
     const id = uri.split(':').pop()
     if (id === undefined || id === '') continue
     try {
-      const episode = asEpisode(await client.api('GET', `/episodes/${id}`, query), 'episode')
-      corrected.set(uri, episode.resume_point?.fully_played === true)
+      corrected.set(uri, asEpisode(await client.api('GET', `/episodes/${id}`, query), 'episode'))
     } catch (error) {
       // An episode can go unavailable in the user's market between calls. Leave the
       // listing's value in place rather than failing the whole run over one episode.
@@ -131,8 +138,16 @@ async function verifyResumePoints(
   }
 
   return candidates.map((candidate) => {
-    const fullyPlayed = corrected.get(candidate.uri)
-    return fullyPlayed === undefined ? candidate : { ...candidate, fullyPlayed }
+    const episode = corrected.get(candidate.uri)
+    if (episode === undefined) return candidate
+    // Correct the position as well as the flag: PLAYED_THRESHOLD_PERCENT compares
+    // against it, and the listing's value is the one known to be unreliable.
+    return {
+      ...candidate,
+      fullyPlayed: episode.resume_point?.fully_played === true,
+      resumePositionMs: episode.resume_point?.resume_position_ms ?? 0,
+      durationMs: episode.duration_ms > 0 ? episode.duration_ms : candidate.durationMs,
+    }
   })
 }
 
@@ -208,16 +223,27 @@ async function main(): Promise<void> {
   const market = await preflight(client)
   const state = await readState(config.stateFile)
 
-  let candidates = await collectCandidates(client, market)
-  let selected = selectEpisodes({ candidates, maxEpisodes: config.maxEpisodes })
+  const selectionOptions = {
+    maxEpisodes: config.maxEpisodes,
+    maxPerShow: config.maxPerShow,
+    skipPlayed: config.skipPlayed,
+    playedThreshold: config.playedThresholdPercent / 100,
+  }
 
-  if (config.verifyResumePoints) {
+  let candidates = await collectCandidates(client, market)
+  let selected = selectEpisodes({ candidates, ...selectionOptions })
+
+  // Verifying resume points costs one call per episode, and only matters if the
+  // played state can change the outcome. With SKIP_PLAYED=0 it cannot.
+  if (config.verifyResumePoints && config.skipPlayed) {
     const toCheck = new Set<string>([
       ...selected.map((candidate) => candidate.uri),
       ...state.added.map((entry) => entry.uri),
     ])
     candidates = await verifyResumePoints(client, candidates, toCheck, market)
-    selected = selectEpisodes({ candidates, maxEpisodes: config.maxEpisodes })
+    selected = selectEpisodes({ candidates, ...selectionOptions })
+  } else if (!config.skipPlayed) {
+    console.log('SKIP_PLAYED=0: keeping the newest episodes regardless of played state.')
   }
 
   const interesting = [
@@ -226,7 +252,13 @@ async function main(): Promise<void> {
   const saved = await savedUris(client, interesting)
   const plan = planChanges({ selected, state, saved })
 
-  console.log(`\nTop ${selected.length} unplayed episodes:`)
+  const showCount = new Set(selected.map((candidate) => candidate.showId)).size
+  const heading = config.skipPlayed ? 'unplayed episodes' : 'episodes'
+  console.log(
+    `\nTop ${selected.length} ${heading} from ${showCount} shows` +
+      (config.maxPerShow > 0 ? ` (max ${config.maxPerShow} per show)` : '') +
+      ':',
+  )
   for (const candidate of selected) console.log(describe(candidate))
 
   console.log(`\nAdd (${plan.toAdd.length}):`)
@@ -278,6 +310,7 @@ async function main(): Promise<void> {
   console.log(
     `\nadded ${plan.toAdd.length}, removed ${plan.toRemove.length}, ` +
       `reordered ${reordered ? 'yes' : 'no'}, tracked ${plan.tracked.length}, ` +
+      `shows ${showCount}, ` +
       `manual ${plan.manual.length}, api calls ${client.callCount()}` +
       (config.dryRun ? ' (dry run)' : ''),
   )
