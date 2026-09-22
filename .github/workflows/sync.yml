@@ -1,0 +1,57 @@
+name: Sync Your Episodes
+
+on:
+  schedule:
+    # :07 rather than :00 — GitHub queues scheduled runs at the top of the hour,
+    # and this cadence is best-effort anyway. A missed run costs nothing: the next
+    # one recomputes the desired state from scratch.
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Plan only, change nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spotify-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deliberately no `npm ci`: `dependencies` is empty and Node runs the
+      # TypeScript directly, so this job stays inside a single billable minute.
+      # Adding a runtime dependency or a build step roughly doubles the monthly cost.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
+      - name: Sync
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: node src/sync.ts
+
+      - name: Commit state.json
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if git diff --quiet -- state.json; then
+            echo "state.json unchanged; nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git commit -m "chore: update state.json [skip ci]"
+          # A slow run can be overtaken by the next hour's commit; rebase once
+          # rather than wedging the schedule until someone intervenes.
+          git push || (git pull --rebase origin "${GITHUB_REF_NAME}" && git push)

@@ -1,0 +1,26 @@
+{
+  "name": "spotify-your-episode-refresher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Keeps Spotify 'Your Episodes' stocked with the newest unplayed episodes from every followed show.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/sync.ts",
+    "dry-run": "DRY_RUN=1 node src/sync.ts",
+    "auth": "node scripts/get-refresh-token.ts",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.20.0"
+  }
+}
