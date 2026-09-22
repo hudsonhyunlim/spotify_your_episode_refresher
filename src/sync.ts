@@ -28,6 +28,8 @@ const config = {
   skipPlayed: process.env.SKIP_PLAYED !== '0',
   /** Treat an episode this far through as finished. 0 relies on `fully_played` alone. */
   playedThresholdPercent: Number(process.env.PLAYED_THRESHOLD_PERCENT ?? 0),
+  /** One request per added URI, so Your Episodes ends up in the intended order. */
+  orderedAdds: process.env.ORDERED_ADDS !== '0',
   dryRun: process.env.DRY_RUN === '1',
   reorder: process.env.REORDER !== '0',
   verifyResumePoints: process.env.VERIFY_RESUME_POINTS !== '0',
@@ -164,12 +166,28 @@ async function savedUris(client: Client, uris: readonly string[]): Promise<Set<s
   return saved
 }
 
-/** `uris` is a query parameter with an empty body — not a JSON payload. */
+/**
+ * `uris` is a query parameter with an empty body — not a JSON payload.
+ *
+ * `ordered` sends one URI per request instead of batching. Your Episodes is
+ * sorted by when an item was added, and a batched `PUT` appears to stamp every
+ * URI in the request with the same time — so within a batch the resulting order
+ * is arbitrary, which reads as random. One request per URI gives each its own
+ * timestamp and makes the order deterministic. Removals don't care, so they stay
+ * batched at 40 per request.
+ */
 async function libraryWrite(
   client: Client,
   method: 'PUT' | 'DELETE',
   uris: readonly string[],
+  ordered = false,
 ): Promise<void> {
+  if (ordered && method === 'PUT') {
+    for (const uri of uris) {
+      await client.api(method, '/me/library', { uris: uri })
+    }
+    return
+  }
   for (const batch of chunk(uris, URIS_PER_REQUEST)) {
     await client.api(method, '/me/library', { uris: batch.join(',') })
   }
@@ -277,6 +295,7 @@ async function main(): Promise<void> {
         client,
         'PUT',
         plan.toAdd.map((candidate) => candidate.uri),
+        config.orderedAdds,
       )
     }
   }
@@ -292,7 +311,7 @@ async function main(): Promise<void> {
         console.log(`\nRe-ordering ${reorder.addUris.length} script-added episodes.`)
         if (!config.dryRun) {
           await libraryWrite(client, 'DELETE', reorder.removeUris)
-          await libraryWrite(client, 'PUT', reorder.addUris)
+          await libraryWrite(client, 'PUT', reorder.addUris, config.orderedAdds)
         }
       }
     }

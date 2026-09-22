@@ -170,6 +170,7 @@ All optional, set as environment variables (or `env:` entries in `.github/workfl
 | `EPISODES_PER_SHOW` | `5` | How far back to look in each followed show (API maximum 50) |
 | `DRY_RUN` | unset | `1` plans without changing anything |
 | `REORDER` | `1` | `0` disables the re-ordering pass |
+| `ORDERED_ADDS` | `1` | `0` batches adds 40 per request, losing the guaranteed order |
 | `VERIFY_RESUME_POINTS` | `1` | `0` trusts the show listing's played state (see below) |
 | `STATE_FILE` | `state.json` | Where the record of script-added episodes lives |
 | `MAX_RETRIES` | `5` | Retries per request on 429 / 5xx |
@@ -197,11 +198,26 @@ out of the top N.
 
 ## Ordering
 
-Your Episodes is ordered most-recently-added first, so the script adds episodes oldest-release
-first, putting the newest release on top. Because later runs append newer episodes underneath
-older ones, each run also re-adds the script-added set in order when it has drifted. Playback
-position lives on your account rather than on library membership, so this round trip doesn't
-lose your place. Set `REORDER=0` to turn it off.
+Your Episodes is ordered by when each episode was added, most recent first. So the script adds
+episodes **oldest release first**, which leaves the newest release on top.
+
+Episodes are added **one per request**. A batched `PUT /me/library?uris=a,b,c` appears to stamp
+every URI in the request with the same added-at time, and within that group the order is
+arbitrary — the list comes out shuffled regardless of the order the URIs were sent in. One
+request per URI gives each its own timestamp and makes the result deterministic. It costs one
+API call per episode added, which is normally a handful per run. Set `ORDERED_ADDS=0` to batch
+them at 40 per request instead, if you don't care about the order. Removals are always batched,
+since their order is irrelevant.
+
+Later runs append newer episodes above older ones, so the list stays sorted on its own. If it
+does drift — a show publishing something with an older release date, say — the re-order pass
+removes the script-added set and re-adds it in order. Playback position lives on your account
+rather than on library membership, so that round trip doesn't lose your place. Set `REORDER=0`
+to turn it off.
+
+If the list still looks unsorted in the app, check the sort control in Your Episodes itself:
+Spotify offers Recently Added, Release Date and Show Name, and only **Recently Added** reflects
+what this script controls.
 
 ## Show diversity
 
