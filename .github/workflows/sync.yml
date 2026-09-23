@@ -2,7 +2,7 @@ name: Sync Your Episodes
 
 on:
   schedule:
-    # Every 4 hours, at :07 past. UTC — GitHub cron has no timezone, so local
+    # Every 6 hours, at :07 past. UTC — GitHub cron has no timezone, so local
     # run times shift by an hour across daylight saving.
     # :07 rather than :00 because GitHub queues scheduled runs at the top of the
     # hour. The schedule is best-effort either way: a missed or dropped run costs
@@ -10,8 +10,11 @@ on:
     #
     # Frequency does not affect Spotify's rate limit, which is a rolling 30-second
     # window: each run is the same burst of calls however often it happens. It
-    # only changes the daily call total against the Development Mode quota.
-    - cron: '7 */4 * * *'
+    # only changes the daily call total against the Development Mode quota — and
+    # that quota is the binding limit. Measured at roughly 700 calls a day, with
+    # ~82 of each run's cost fixed (one call per followed show), so the cadence
+    # mostly multiplies that overhead. Six-hourly lands near 400 a day.
+    - cron: '7 */6 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
