@@ -221,8 +221,12 @@ now reconciles against the library itself rather than against a guessed list of 
 stray is recognised and cleared.
 
 `PRUNE_UNTRACKED=1` removes everything not currently selected, including genuine manual saves.
-It exists for a one-off cleanup of strays predating `everAdded`; check the `manual` count in a
-dry run first, and only use it when that count is 0.
+It exists for a one-off cleanup of strays predating `everAdded`.
+
+On GitHub it is a tick-box on **Run workflow**, next to the dry-run one, rather than a setting
+in the workflow file — a one-off cleanup cannot then be left switched on by accident, and the
+schedule never sees it. **Do a dry run first and check the `manual` count: only use this when
+it reads 0**, because anything it reports as a manual save is exactly what this would delete.
 
 If an episode is already in Your Episodes but absent from `state.json`, it's adopted as a
 manual save: the script leaves it alone and never starts tracking it — even when that same

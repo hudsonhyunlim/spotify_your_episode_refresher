@@ -21,6 +21,10 @@ on:
         description: 'Plan only, change nothing'
         type: boolean
         default: false
+      prune_untracked:
+        description: 'DESTRUCTIVE — also remove saved episodes this script has no record of, including your own manual saves'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -48,6 +52,9 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          # A tick-box rather than an edit to this file, so a one-off cleanup
+          # cannot be left switched on by accident. Never set for the schedule.
+          PRUNE_UNTRACKED: ${{ inputs.prune_untracked && '1' || '' }}
           # How many episodes to keep in Your Episodes.
           MAX_EPISODES: '50'
           # At most this many from any one show, so daily publishers don't take
