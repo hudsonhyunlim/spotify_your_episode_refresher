@@ -39,6 +39,9 @@ export async function readState(path: string): Promise<SyncState> {
   return {
     version: typeof record.version === 'number' ? record.version : STATE_VERSION,
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : undefined,
+    everAdded: Array.isArray(record.everAdded)
+      ? record.everAdded.filter((uri): uri is string => typeof uri === 'string')
+      : undefined,
     added: record.added.filter(
       (entry): entry is SyncState['added'][number] =>
         typeof entry === 'object' &&

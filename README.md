@@ -171,6 +171,8 @@ All optional, set as environment variables (or `env:` entries in `.github/workfl
 | `DRY_RUN` | unset | `1` plans without changing anything |
 | `REORDER` | `1` | `0` disables the re-ordering pass |
 | `ORDERED_ADDS` | `1` | `0` batches adds 40 per request, losing the guaranteed order |
+| `DEDUPE_BY_TITLE` | `1` | Drop a selected episode whose title already appears in the list |
+| `PRUNE_UNTRACKED` | unset | `1` also removes saved episodes this script has no record of — **deletes manual saves** |
 | `VERIFY_RESUME_POINTS` | `1` | `0` trusts the show listing's played state (see below) |
 | `STATE_FILE` | `state.json` | Where the record of script-added episodes lives |
 | `MAX_RETRIES` | `5` | Retries per request on 429 / 5xx |
@@ -183,10 +185,44 @@ To change how many episodes are kept, edit `MAX_EPISODES` under the `Sync` step'
 MAX_EPISODES=40 npm start
 ```
 
+## Spotify's quota is the real limit
+
+Development Mode apps have a quota counted per developer account, separate from the rate
+limit, and it is the constraint that actually bites. When it is exhausted the API returns 429
+with a `Retry-After` measured in **hours** — the run fails, and so does every run until the
+window rolls over.
+
+Keeping a run cheap therefore matters more than keeping it frequent. Roughly, per run:
+
+| Cost | Calls |
+|---|---|
+| One per followed show | ~75 |
+| Reading Your Episodes | 1 per 50 saved |
+| Adding an episode | 1 each (see Ordering) |
+| Verifying played state | 1 per tracked episode, **off by default in the workflow** |
+| Everything else | ~5 |
+
+The single call per followed show is unavoidable: the February 2026 migration removed the
+batch lookups. The lever that matters is `VERIFY_RESUME_POINTS`, which the workflow sets to
+`0` — it was about a third of the budget. If you hit the quota anyway, lengthen the cron
+before anything else.
+
 ## How it protects your own saves
 
-`state.json` records exactly which episodes *this script* added. Pruning only ever considers
-URIs listed there, so an episode you saved by hand cannot be removed.
+`state.json` records exactly which episodes *this script* added — both `added`, the current
+set, and `everAdded`, a longer memory of everything it has ever put there. Removal only ever
+considers URIs in one of those, so an episode you saved by hand cannot be removed.
+
+`everAdded` exists because `added` alone was not enough. It holds only the current set, so an
+episode that dropped out of it — because a delete silently failed, or a run died between
+writing the library and writing state — became indistinguishable from one you saved yourself,
+and nothing was left willing to remove it. Those strays accumulated in Your Episodes. Each run
+now reconciles against the library itself rather than against a guessed list of URIs, so a
+stray is recognised and cleared.
+
+`PRUNE_UNTRACKED=1` removes everything not currently selected, including genuine manual saves.
+It exists for a one-off cleanup of strays predating `everAdded`; check the `manual` count in a
+dry run first, and only use it when that count is 0.
 
 If an episode is already in Your Episodes but absent from `state.json`, it's adopted as a
 manual save: the script leaves it alone and never starts tracking it — even when that same

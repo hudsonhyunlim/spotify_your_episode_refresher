@@ -54,6 +54,14 @@ jobs:
           # fully_played flag. 90% played stays in the list; 95%+ is pruned.
           # Set to 0 to rely on the flag alone.
           PLAYED_THRESHOLD_PERCENT: '95'
+          # Drop an episode whose title already appears in the list. Some
+          # publishers push one episode to several feeds.
+          DEDUPE_BY_TITLE: '1'
+          # Off because it costs one call per tracked episode — about a third of
+          # the run's Spotify budget — and the Development Mode quota is the
+          # binding limit here. Played state then comes from the show listing,
+          # which is occasionally stale, so a finished episode may linger a run.
+          VERIFY_RESUME_POINTS: '0'
         run: node src/sync.ts
 
       - name: Commit state.json
