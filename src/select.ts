@@ -68,6 +68,7 @@ export function selectEpisodes({
   maxPerShow = 0,
   skipPlayed = true,
   playedThreshold = 0,
+  dedupeByTitle = false,
 }: {
   candidates: readonly Candidate[]
   maxEpisodes: number
@@ -77,6 +78,8 @@ export function selectEpisodes({
   skipPlayed?: boolean
   /** Fraction of duration past which an episode counts as finished. 0 disables. */
   playedThreshold?: number
+  /** Drop a later episode whose title matches one already selected. */
+  dedupeByTitle?: boolean
 }): Candidate[] {
   const limit = Math.max(0, maxEpisodes)
   const ranked = candidates
@@ -84,18 +87,38 @@ export function selectEpisodes({
     .slice()
     .sort(byNewestRelease)
 
-  if (maxPerShow <= 0) return ranked.slice(0, limit)
-
   const takenPerShow = new Map<string, number>()
+  const seenTitles = new Set<string>()
   const selected: Candidate[] = []
   for (const candidate of ranked) {
     if (selected.length >= limit) break
-    const taken = takenPerShow.get(candidate.showId) ?? 0
-    if (taken >= maxPerShow) continue
-    takenPerShow.set(candidate.showId, taken + 1)
+
+    if (maxPerShow > 0) {
+      const taken = takenPerShow.get(candidate.showId) ?? 0
+      if (taken >= maxPerShow) continue
+      takenPerShow.set(candidate.showId, taken + 1)
+    }
+
+    if (dedupeByTitle) {
+      // Some publishers push the same episode to several feeds — two Economist
+      // shows carrying one episode, say. Those are distinct Spotify episodes with
+      // distinct URIs, so only the title gives them away.
+      const title = normalizeTitle(candidate.name)
+      if (title !== '' && seenTitles.has(title)) continue
+      seenTitles.add(title)
+    }
+
     selected.push(candidate)
   }
   return selected
+}
+
+/** Lowercase, strip punctuation and collapse whitespace, for title comparison. */
+export function normalizeTitle(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
 }
 
 export interface ChangePlan {
@@ -118,13 +141,18 @@ export function planChanges({
   selected,
   state,
   saved,
+  pruneUntracked = false,
 }: {
   selected: readonly Candidate[]
   state: SyncState
-  /** URIs currently present in Your Episodes, per `GET /me/library/contains`. */
+  /** Everything currently in Your Episodes, read from the library itself. */
   saved: ReadonlySet<string>
+  /** Also remove saved episodes this script has no record of. Destroys manual saves. */
+  pruneUntracked?: boolean
 }): ChangePlan {
   const scriptUris = new Set(state.added.map((entry) => entry.uri))
+  const everAdded = new Set(state.everAdded ?? [])
+  const ownedByScript = (uri: string): boolean => scriptUris.has(uri) || everAdded.has(uri)
   const selectedUris = new Set(selected.map((candidate) => candidate.uri))
 
   const manual: string[] = []
@@ -133,10 +161,8 @@ export function planChanges({
 
   for (const candidate of selected) {
     const isSaved = saved.has(candidate.uri)
-    const isScript = scriptUris.has(candidate.uri)
-
-    if (isSaved && !isScript) {
-      // Already in Your Episodes but absent from state: the user saved this by hand.
+    if (isSaved && !ownedByScript(candidate.uri)) {
+      // Already in Your Episodes and never added by this script: a manual save.
       manual.push(candidate.uri)
       continue
     }
@@ -144,9 +170,15 @@ export function planChanges({
     tracked.push(candidate)
   }
 
-  const toRemove = state.added
-    .filter((entry) => saved.has(entry.uri) && !selectedUris.has(entry.uri))
-    .map((entry) => entry.uri)
+  // Walk the real library rather than only the tracked set. An episode that fell
+  // out of `added` on an earlier run — because a delete silently failed, or a run
+  // died between writing the library and writing state — is otherwise orphaned in
+  // Your Episodes with nothing left that is willing to remove it.
+  const toRemove: string[] = []
+  for (const uri of saved) {
+    if (selectedUris.has(uri)) continue
+    if (pruneUntracked || ownedByScript(uri)) toRemove.push(uri)
+  }
 
   return {
     // Adds go oldest-first because Your Episodes orders most-recently-added first.
@@ -155,6 +187,17 @@ export function planChanges({
     manual,
     tracked,
   }
+}
+
+/** Cap on how many past URIs `everAdded` remembers. */
+export const EVER_ADDED_LIMIT = 1000
+
+/** Newly added URIs first, then the previous memory, deduped and capped. */
+export function mergeEverAdded(
+  previous: readonly string[] | undefined,
+  justAdded: readonly string[],
+): string[] {
+  return [...new Set([...justAdded, ...(previous ?? [])])].slice(0, EVER_ADDED_LIMIT)
 }
 
 /**

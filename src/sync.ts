@@ -10,6 +10,7 @@ import type { ChangePlan } from './select.ts'
 import {
   URIS_PER_REQUEST,
   chunk,
+  mergeEverAdded,
   normalizeReleaseDate,
   planChanges,
   planReorder,
@@ -30,6 +31,10 @@ const config = {
   playedThresholdPercent: Number(process.env.PLAYED_THRESHOLD_PERCENT ?? 0),
   /** One request per added URI, so Your Episodes ends up in the intended order. */
   orderedAdds: process.env.ORDERED_ADDS !== '0',
+  /** Remove saved episodes this script has no record of. Destroys manual saves. */
+  pruneUntracked: process.env.PRUNE_UNTRACKED === '1',
+  /** Drop a selected episode whose title already appears earlier in the list. */
+  dedupeByTitle: process.env.DEDUPE_BY_TITLE !== '0',
   dryRun: process.env.DRY_RUN === '1',
   reorder: process.env.REORDER !== '0',
   verifyResumePoints: process.env.VERIFY_RESUME_POINTS !== '0',
@@ -153,6 +158,31 @@ async function verifyResumePoints(
   })
 }
 
+/**
+ * The whole of Your Episodes, in display order (most recently added first).
+ *
+ * This is the single source of truth for what is actually saved. Asking
+ * `/me/library/contains` about a guessed list of URIs can only ever confirm the
+ * episodes we already suspected, so anything that leaked into the library
+ * unnoticed stays invisible — and it costs more calls than just reading the list.
+ */
+async function libraryOrder(client: Client): Promise<string[] | undefined> {
+  try {
+    const order: string[] = []
+    for await (const saved of client.paginate<SavedEpisode>('/me/episodes', { limit: 50 })) {
+      if (saved.episode?.uri !== undefined) order.push(saved.episode.uri)
+    }
+    return order
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+      console.warn('GET /me/episodes unavailable; falling back to /me/library/contains.')
+      return undefined
+    }
+    throw error
+  }
+}
+
+/** Fallback when `/me/episodes` is unavailable: can only check URIs we know about. */
 async function savedUris(client: Client, uris: readonly string[]): Promise<Set<string>> {
   const saved = new Set<string>()
   for (const batch of chunk(uris, URIS_PER_REQUEST)) {
@@ -193,26 +223,10 @@ async function libraryWrite(
   }
 }
 
-async function currentLibraryOrder(client: Client): Promise<string[] | undefined> {
-  try {
-    const order: string[] = []
-    for await (const saved of client.paginate<SavedEpisode>('/me/episodes', { limit: 50 })) {
-      if (saved.episode?.uri !== undefined) order.push(saved.episode.uri)
-    }
-    return order
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
-      console.warn('GET /me/episodes unavailable; skipping the re-order pass this run.')
-      return undefined
-    }
-    throw error
-  }
-}
-
 /**
- * On a real run the re-order pass reads the library after the adds have landed. A
- * dry run performs no writes, so project them here instead — otherwise it would
- * always report a re-order that the real run would not need.
+ * The library order as it stands after this run's adds and removes, derived from
+ * the order read before them. Saves re-reading the whole list just to check
+ * whether a re-order is still needed.
  */
 function projectOrder(order: readonly string[], plan: ChangePlan): string[] {
   const removed = new Set(plan.toRemove)
@@ -246,6 +260,7 @@ async function main(): Promise<void> {
     maxPerShow: config.maxPerShow,
     skipPlayed: config.skipPlayed,
     playedThreshold: config.playedThresholdPercent / 100,
+    dedupeByTitle: config.dedupeByTitle,
   }
 
   let candidates = await collectCandidates(client, market)
@@ -264,11 +279,21 @@ async function main(): Promise<void> {
     console.log('SKIP_PLAYED=0: keeping the newest episodes regardless of played state.')
   }
 
-  const interesting = [
-    ...new Set([...selected.map((c) => c.uri), ...state.added.map((e) => e.uri)]),
-  ]
-  const saved = await savedUris(client, interesting)
-  const plan = planChanges({ selected, state, saved })
+  // One read gives membership, display order and any strays, all at once.
+  const order = await libraryOrder(client)
+  const saved =
+    order !== undefined
+      ? new Set(order)
+      : await savedUris(client, [
+          ...new Set([
+            ...selected.map((c) => c.uri),
+            ...state.added.map((e) => e.uri),
+            ...(state.everAdded ?? []),
+          ]),
+        ])
+  const plan = planChanges({ selected, state, saved, pruneUntracked: config.pruneUntracked })
+
+  console.log(`Your Episodes currently holds ${saved.size} episodes.`)
 
   const showCount = new Set(selected.map((candidate) => candidate.showId)).size
   const heading = config.skipPlayed ? 'unplayed episodes' : 'episodes'
@@ -302,10 +327,11 @@ async function main(): Promise<void> {
 
   let reordered = false
   if (config.reorder && plan.tracked.length > 0) {
-    const fetched = await currentLibraryOrder(client)
-    if (fetched !== undefined) {
-      const order = config.dryRun ? projectOrder(fetched, plan) : fetched
-      const reorder = planReorder({ tracked: plan.tracked, currentOrder: order })
+    if (order !== undefined) {
+      // Project the writes on a dry run; on a real run they have already landed,
+      // but re-reading the list would cost another page of calls for no gain.
+      const effective = projectOrder(order, plan)
+      const reorder = planReorder({ tracked: plan.tracked, currentOrder: effective })
       if (reorder.addUris.length > 0) {
         reordered = true
         console.log(`\nRe-ordering ${reorder.addUris.length} script-added episodes.`)
@@ -323,6 +349,10 @@ async function main(): Promise<void> {
       version: state.version,
       updatedAt: now,
       added: toStateEntries(plan.tracked, state, now),
+      everAdded: mergeEverAdded(
+        state.everAdded,
+        plan.tracked.map((candidate) => candidate.uri),
+      ),
     })
   }
 

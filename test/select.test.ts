@@ -2,9 +2,12 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  EVER_ADDED_LIMIT,
   URIS_PER_REQUEST,
   chunk,
   isFinished,
+  mergeEverAdded,
+  normalizeTitle,
   normalizeReleaseDate,
   planChanges,
   planReorder,
@@ -27,9 +30,10 @@ function episode(overrides: Partial<Candidate> & { uri: string }): Candidate {
   }
 }
 
-function state(uris: string[]): SyncState {
+function state(uris: string[], everAdded?: string[]): SyncState {
   return {
     version: 1,
+    ...(everAdded === undefined ? {} : { everAdded }),
     added: uris.map((uri) => ({
       uri,
       showId: 'show1',
@@ -253,6 +257,89 @@ test('fully_played still wins regardless of threshold', () => {
   const played = episode({ uri: 'spotify:episode:done', fullyPlayed: true, resumePositionMs: 0 })
   assert.equal(isFinished(played, 0), true)
   assert.equal(isFinished(played, 0.95), true)
+})
+
+test('a stray the script added earlier is removed, not treated as a manual save', () => {
+  // The leak this fixes: `added` only holds the current set, so an episode that
+  // fell out of it after a failed delete had nothing left willing to remove it.
+  const plan = planChanges({
+    selected: [episode({ uri: 'spotify:episode:keeper' })],
+    state: state(['spotify:episode:keeper'], ['spotify:episode:stray']),
+    saved: new Set(['spotify:episode:keeper', 'spotify:episode:stray']),
+  })
+  assert.deepEqual(plan.toRemove, ['spotify:episode:stray'])
+})
+
+test('a genuine manual save survives even with everAdded populated', () => {
+  const plan = planChanges({
+    selected: [episode({ uri: 'spotify:episode:keeper' })],
+    state: state(['spotify:episode:keeper'], ['spotify:episode:old']),
+    saved: new Set(['spotify:episode:keeper', 'spotify:episode:mine']),
+  })
+  assert.deepEqual(plan.toRemove, [], 'never added by the script, so never removed')
+})
+
+test('a manual save that is also selected is adopted, not tracked', () => {
+  const plan = planChanges({
+    selected: [episode({ uri: 'spotify:episode:mine' })],
+    state: state([], []),
+    saved: new Set(['spotify:episode:mine']),
+  })
+  assert.deepEqual(plan.manual, ['spotify:episode:mine'])
+  assert.deepEqual(plan.tracked, [])
+  assert.deepEqual(plan.toRemove, [])
+})
+
+test('pruneUntracked clears everything not selected, including manual saves', () => {
+  const plan = planChanges({
+    selected: [episode({ uri: 'spotify:episode:keeper' })],
+    state: state(['spotify:episode:keeper']),
+    saved: new Set(['spotify:episode:keeper', 'spotify:episode:mine', 'spotify:episode:x']),
+    pruneUntracked: true,
+  })
+  assert.deepEqual(plan.toRemove.sort(), ['spotify:episode:mine', 'spotify:episode:x'])
+})
+
+test('mergeEverAdded keeps newest first, dedupes, and caps', () => {
+  assert.deepEqual(mergeEverAdded(['b', 'c'], ['a', 'b']), ['a', 'b', 'c'])
+  assert.deepEqual(mergeEverAdded(undefined, ['a']), ['a'])
+
+  const many = Array.from({ length: EVER_ADDED_LIMIT + 50 }, (_, i) => `u${i}`)
+  const merged = mergeEverAdded(many, ['fresh'])
+  assert.equal(merged.length, EVER_ADDED_LIMIT)
+  assert.equal(merged[0], 'fresh')
+})
+
+test('dedupeByTitle drops the same episode carried on a second feed', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:a', showId: 'intelligence', name: 'Centre punch: Germany' }),
+    episode({ uri: 'spotify:episode:b', showId: 'econ-pods', name: 'Centre Punch:  germany!' }),
+    episode({ uri: 'spotify:episode:c', showId: 'other', name: 'Something else' }),
+  ]
+
+  assert.equal(selectEpisodes({ candidates, maxEpisodes: 10 }).length, 3)
+
+  // Different shows and different URIs, so only the title gives it away.
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, dedupeByTitle: true }).map((c) => c.uri),
+    ['spotify:episode:a', 'spotify:episode:c'],
+  )
+})
+
+test('normalizeTitle ignores case, punctuation and spacing', () => {
+  assert.equal(normalizeTitle('Centre punch: Germany!'), normalizeTitle('CENTRE  PUNCH - germany'))
+  assert.notEqual(normalizeTitle('Episode 1'), normalizeTitle('Episode 2'))
+})
+
+test('dedupeByTitle keeps the newer of two same-titled episodes', () => {
+  const candidates = [
+    episode({ uri: 'spotify:episode:old', showId: 'a', name: 'Same', releaseDate: '2026-09-01' }),
+    episode({ uri: 'spotify:episode:new', showId: 'b', name: 'Same', releaseDate: '2026-09-22' }),
+  ]
+  assert.deepEqual(
+    selectEpisodes({ candidates, maxEpisodes: 10, dedupeByTitle: true }).map((c) => c.uri),
+    ['spotify:episode:new'],
+  )
 })
 
 test('planChanges adds unsaved selections oldest first', () => {

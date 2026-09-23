@@ -71,6 +71,15 @@ export interface SyncState {
   updatedAt?: string
   /** Stored newest-release-first, matching the intended display order. */
   added: StateEntry[]
+  /**
+   * Every URI this script has ever added, newest first and capped.
+   *
+   * `added` only holds the current set, so an episode that drops out of it
+   * becomes indistinguishable from one the user saved by hand — and therefore
+   * un-removable. Anything that failed to delete then lingers in Your Episodes
+   * forever. This is the longer memory that makes such strays identifiable.
+   */
+  everAdded?: string[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
