@@ -2,7 +2,7 @@ name: Sync Your Episodes
 
 on:
   schedule:
-    # Every 6 hours, at :07 past. UTC — GitHub cron has no timezone, so local
+    # Every 8 hours, at :07 past — 00:07, 08:07, 16:07 UTC. UTC — GitHub cron has no timezone, so local
     # run times shift by an hour across daylight saving.
     # :07 rather than :00 because GitHub queues scheduled runs at the top of the
     # hour. The schedule is best-effort either way: a missed or dropped run costs
@@ -13,12 +13,17 @@ on:
     # only changes the daily call total against the Development Mode quota — and
     # that quota is the binding limit. Measured at roughly 700 calls a day, with
     # ~82 of each run's cost fixed (one call per followed show), so the cadence
-    # mostly multiplies that overhead. Six-hourly lands near 400 a day.
-    - cron: '7 */6 * * *'
+    # mostly multiplies that overhead. Eight-hourly lands near 320 a day, under
+    # half the ceiling, which leaves room for manual runs when debugging.
+    - cron: '7 */8 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
         description: 'Plan only, change nothing'
+        type: boolean
+        default: false
+      prune_untracked:
+        description: 'DESTRUCTIVE — also remove saved episodes this script has no record of, including your own manual saves'
         type: boolean
         default: false
 
@@ -48,6 +53,9 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          # A tick-box rather than an edit to this file, so a one-off cleanup
+          # cannot be left switched on by accident. Never set for the schedule.
+          PRUNE_UNTRACKED: ${{ inputs.prune_untracked && '1' || '' }}
           # How many episodes to keep in Your Episodes.
           MAX_EPISODES: '50'
           # At most this many from any one show, so daily publishers don't take

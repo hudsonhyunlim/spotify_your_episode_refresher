@@ -221,8 +221,12 @@ now reconciles against the library itself rather than against a guessed list of 
 stray is recognised and cleared.
 
 `PRUNE_UNTRACKED=1` removes everything not currently selected, including genuine manual saves.
-It exists for a one-off cleanup of strays predating `everAdded`; check the `manual` count in a
-dry run first, and only use it when that count is 0.
+It exists for a one-off cleanup of strays predating `everAdded`.
+
+On GitHub it is a tick-box on **Run workflow**, next to the dry-run one, rather than a setting
+in the workflow file — a one-off cleanup cannot then be left switched on by accident, and the
+schedule never sees it. **Do a dry run first and check the `manual` count: only use this when
+it reads 0**, because anything it reports as a manual save is exactly what this would delete.
 
 If an episode is already in Your Episodes but absent from `state.json`, it's adopted as a
 manual save: the script leaves it alone and never starts tracking it — even when that same
@@ -325,16 +329,16 @@ new value — update the secret when you see it.
 
 ## Schedule
 
-The sync runs **every 6 hours**, set by the `cron` line near the top of
+The sync runs **every 8 hours**, set by the `cron` line near the top of
 `.github/workflows/sync.yml`:
 
 ```yaml
 on:
   schedule:
-    - cron: '7 */6 * * *'
+    - cron: '7 */8 * * *'
 ```
 
-That fires at **00:07, 06:07, 12:07 and 18:07 UTC** — four runs a day.
+That fires at **00:07, 08:07 and 16:07 UTC** — three runs a day.
 
 ### Changing it
 
@@ -346,7 +350,8 @@ effect on the next run; there's nothing to redeploy.
 | Hourly | `7 * * * *` | 24 |
 | Every 2 hours | `7 */2 * * *` | 12 |
 | Every 4 hours | `7 */4 * * *` | 6 |
-| **Every 6 hours (current)** | `7 */6 * * *` | 4 |
+| Every 6 hours | `7 */6 * * *` | 4 |
+| **Every 8 hours (current)** | `7 */8 * * *` | 3 |
 | Twice a day | `7 7,19 * * *` | 2 |
 | Specific hours | `7 1,5,9,13,17,21 * * *` | 6, at those UTC hours |
 
@@ -357,7 +362,7 @@ The five fields are `minute hour day-of-month month day-of-week`.
 **It's UTC, with no timezone option.** So local run times shift by an hour when daylight saving
 changes. If you want a run to land at a particular local time — say just before a commute —
 convert to UTC and list the hours explicitly. For US Pacific (UTC−7 in summer),
-`7 */6 * * *` lands at 5:07pm, 11:07pm, 5:07am and 11:07am local.
+`7 */8 * * *` lands at 5:07pm, 1:07am and 9:07am local.
 
 **It's best effort.** GitHub queues scheduled runs and they can be delayed by several minutes
 or occasionally dropped altogether, especially near the top of the hour — hence `:07`. This is
@@ -379,7 +384,8 @@ of runs is what matters, not the seconds. A run takes about 20 seconds.
 | Hourly | ~730 | ~730 | 37% |
 | Every 2 hours | ~365 | ~365 | 18% |
 | Every 4 hours | ~182 | ~182 | 9% |
-| **Every 6 hours (current)** | ~122 | ~122 | **6%** |
+| Every 6 hours | ~122 | ~122 | 6% |
+| **Every 8 hours (current)** | ~91 | ~91 | **5%** |
 
 A run takes about 30 seconds end to end, so there is comfortable margin before it would tip
 into a second billable minute and double these figures. Those numbers cover the sync job only;
@@ -408,8 +414,8 @@ per day whatever the schedule:
 |---|---|---|
 | Every 2 hours | ~1,050 | over |
 | Every 4 hours | ~560 | 80% |
-| **Every 6 hours (current)** | **~400** | **57%** |
-| Every 8 hours | ~320 | 46% |
+| Every 6 hours | ~400 | 57% |
+| **Every 8 hours (current)** | **~320** | **46%** |
 
 80% leaves no room for a manual run, and one re-order pass (+1 call per tracked episode) tips
 it over. That is exactly how the quota was first exhausted.
