@@ -314,6 +314,19 @@ async function main(): Promise<void> {
   }
 
   if (!config.dryRun) {
+    // Record what is about to be added *before* adding it. If the run dies
+    // between the write and the final state save, the next run still recognises
+    // these as its own and can clear them, instead of mistaking them for manual
+    // saves and leaving them stranded.
+    if (plan.toAdd.length > 0) {
+      await writeState(config.stateFile, {
+        ...state,
+        everAdded: mergeEverAdded(
+          state.everAdded,
+          plan.toAdd.map((candidate) => candidate.uri),
+        ),
+      })
+    }
     if (plan.toRemove.length > 0) await libraryWrite(client, 'DELETE', plan.toRemove)
     if (plan.toAdd.length > 0) {
       await libraryWrite(
@@ -369,6 +382,21 @@ main().catch((error: unknown) => {
   if (error instanceof TokenExpiredError) {
     console.error(`\n${error.message}`)
     process.exit(2)
+  }
+  if (error instanceof ApiError && error.status === 429 && error.retryAfter !== undefined) {
+    // A Retry-After measured in hours is the Development Mode quota, not the
+    // rolling rate limit. Nothing to do but wait for the window to roll over —
+    // re-running before then only fails again.
+    const resetsAt = new Date(Date.now() + error.retryAfter * 1000)
+    console.error(
+      `\nSpotify quota exhausted.\n\n${error.message}\n\n` +
+        `The window rolls over at about ${resetsAt.toISOString()} ` +
+        `(${Math.round(error.retryAfter / 360) / 10} hours from now).\n` +
+        'Development Mode quota is counted per developer account, per day. Running\n' +
+        'again before then will just fail. If this keeps happening, lengthen the cron\n' +
+        'in .github/workflows/sync.yml — that is the only lever that reduces daily use.\n',
+    )
+    process.exit(3)
   }
   console.error(error)
   process.exit(1)

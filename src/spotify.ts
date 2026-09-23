@@ -24,9 +24,12 @@ export class TokenExpiredError extends Error {}
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** Seconds Spotify asked us to wait, when it said so. */
+  retryAfter: number | undefined
+  constructor(status: number, message: string, retryAfter?: number) {
     super(message)
     this.status = status
+    this.retryAfter = retryAfter
   }
 }
 
@@ -133,8 +136,8 @@ export function createClient(accessToken: string): Client {
           throw new ApiError(
             429,
             `Rate limited on ${method} ${target.pathname} with Retry-After ${retryAfter}s, ` +
-              `which exceeds MAX_RETRY_AFTER (${MAX_RETRY_AFTER_SECONDS}s). Giving up; ` +
-              'the next scheduled run will retry.',
+              `which exceeds MAX_RETRY_AFTER (${MAX_RETRY_AFTER_SECONDS}s).`,
+            retryAfter,
           )
         }
         if (attempt >= MAX_RETRIES) {
