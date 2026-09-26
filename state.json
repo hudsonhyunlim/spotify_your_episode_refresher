@@ -1,12 +1,18 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T12:59:24.544Z",
+  "updatedAt": "2026-09-26T19:10:44.567Z",
   "added": [
     {
       "uri": "spotify:episode:1EcpWr1BIz78RXvuUOoLcl",
       "showId": "3IM0lmZxpFAY7CwMuv9H4g",
       "releaseDate": "2026-09-26",
       "addedAt": "2026-09-26T12:59:24.544Z"
+    },
+    {
+      "uri": "spotify:episode:1bnaCVbBS0svctsu11qGVA",
+      "showId": "2mTUnDkuKUkhiueKcVWoP0",
+      "releaseDate": "2026-09-26",
+      "addedAt": "2026-09-26T19:10:44.567Z"
     },
     {
       "uri": "spotify:episode:2bZCxtGeASpbOYaS6vAKDh",
@@ -43,6 +49,12 @@
       "showId": "0XrOqvxlqQI6bmdYHuIVnr",
       "releaseDate": "2026-09-26",
       "addedAt": "2026-09-26T12:59:24.544Z"
+    },
+    {
+      "uri": "spotify:episode:6VpN3KJ8Nhfi34HQZ2QLxb",
+      "showId": "3SPqd6V3AyxLV6rlqzRtB4",
+      "releaseDate": "2026-09-26",
+      "addedAt": "2026-09-26T19:10:44.567Z"
     },
     {
       "uri": "spotify:episode:78eiAkbpxWXR0pITpUAPVg",
@@ -289,28 +301,18 @@
       "showId": "0KxdEdeY2Wb3zr28dMlQva",
       "releaseDate": "2026-09-25",
       "addedAt": "2026-09-26T04:46:26.407Z"
-    },
-    {
-      "uri": "spotify:episode:7glswKPIuAfgQ2wtmM6lUp",
-      "showId": "3THlGCNgIUa9fEyqtx7526",
-      "releaseDate": "2026-09-25",
-      "addedAt": "2026-09-25T19:59:25.714Z"
-    },
-    {
-      "uri": "spotify:episode:7kAbPOQPPihz6VRwV1xTkU",
-      "showId": "3pXx5SXzXwJxnf4A5pWN2A",
-      "releaseDate": "2026-09-25",
-      "addedAt": "2026-09-25T19:59:25.714Z"
     }
   ],
   "everAdded": [
     "spotify:episode:1EcpWr1BIz78RXvuUOoLcl",
+    "spotify:episode:1bnaCVbBS0svctsu11qGVA",
     "spotify:episode:2bZCxtGeASpbOYaS6vAKDh",
     "spotify:episode:3YTRzYqZRjO8EQPlJy8yiR",
     "spotify:episode:3wUWLv2GlmTO9UJl6YHgix",
     "spotify:episode:4qE2w9hsap20KYShcDWJkV",
     "spotify:episode:4s37INcJ7daDo6HmEVG58b",
     "spotify:episode:4sstkfjc6qRFdflUZYAl72",
+    "spotify:episode:6VpN3KJ8Nhfi34HQZ2QLxb",
     "spotify:episode:78eiAkbpxWXR0pITpUAPVg",
     "spotify:episode:0B4TFvUCgOhgwbxsbXHFuH",
     "spotify:episode:0QhI3t84cvuwGMJydgb9BR",
