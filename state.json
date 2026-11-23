@@ -1,12 +1,96 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-23T07:20:41.909Z",
+  "updatedAt": "2026-11-23T20:04:25.333Z",
   "added": [
+    {
+      "uri": "spotify:episode:0UfmO2SbUJxGDC1rQGdBTm",
+      "showId": "5y3OjJB6zeWOcvVJJOX1oY",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:0nVdmTocK9NhFKFJ5eKlL0",
+      "showId": "2mTUnDkuKUkhiueKcVWoP0",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:0qGK5JzM5H3uXy6IrZNAIb",
+      "showId": "6NOJ6IkTb2GWMj1RpmtnxP",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:1RBtXoXQi6z7U1OVAmd6ow",
+      "showId": "3cNrL5nALTDuWbRfabHeOG",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:1fYpqckf0DpEW0Ap4nlCE6",
+      "showId": "5KIIXMgM9GTi5AepwOYvIZ",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:1fkJqOhsBGjXBpnRWiurmz",
+      "showId": "6gcw7EF2i70vXXXJnhBNgA",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
     {
       "uri": "spotify:episode:1rm0QliTx8H49jPuk2JWr4",
       "showId": "0XrOqvxlqQI6bmdYHuIVnr",
       "releaseDate": "2026-11-23",
       "addedAt": "2026-11-23T07:20:41.909Z"
+    },
+    {
+      "uri": "spotify:episode:1uunLZPtsnZWXggiKVA8XO",
+      "showId": "187EiGtyrelxJ8wXWEfVUa",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:1wRUV3JsJxKL4jqe0uXbcV",
+      "showId": "5vBjKl7N8ZmfKrjjTvATeK",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:2DMYeewsWP7s47OA5j7wVb",
+      "showId": "2ZFDmgDS2Z6xccP51s1zFQ",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:32YtUlyqG0pjTRgk0jCJNW",
+      "showId": "32ADB4Q1RuNcTHrJ6lQ5lX",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:37Gvd5IQJnFgjOnadbLl6q",
+      "showId": "3cNrL5nALTDuWbRfabHeOG",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:3ErOLYz35K7JbAlKfVfJla",
+      "showId": "3pXx5SXzXwJxnf4A5pWN2A",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:3IBtbGGZ55RgHbJTCWFXSW",
+      "showId": "5RllMBgvDnTau8nnsCUdse",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:3KzQa19Wwa1ZbtbGpE2Kpj",
+      "showId": "07SjDmKb9iliEzpNcN2xGD",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
     },
     {
       "uri": "spotify:episode:3UdmlQrnp58hF3LhpwWcyj",
@@ -21,6 +105,36 @@
       "addedAt": "2026-11-23T07:20:41.909Z"
     },
     {
+      "uri": "spotify:episode:3yOTYo1I4LebLeod0rZ2Re",
+      "showId": "6f1qkZMOcZqT5UkPqG4U7L",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:4AsIMeHSmPLEhFGXPsFQ8a",
+      "showId": "7syF2ry9j6nqYc656WHBA7",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:4NTZJX0vKD25mIxrbZnOpv",
+      "showId": "187EiGtyrelxJ8wXWEfVUa",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:4ZDqaBObIEQr68g4oXT15u",
+      "showId": "3IM0lmZxpFAY7CwMuv9H4g",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:4mKPsCE6NwYHZc35L5LoPR",
+      "showId": "3NViCWfbhXn8c3NauVpa2B",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
       "uri": "spotify:episode:4zJA1VzkWPK9dvyTrrfqLs",
       "showId": "5KIIXMgM9GTi5AepwOYvIZ",
       "releaseDate": "2026-11-23",
@@ -31,6 +145,36 @@
       "showId": "7iQXmUT7XGuZSzAMjoNWlX",
       "releaseDate": "2026-11-23",
       "addedAt": "2026-11-23T07:20:41.909Z"
+    },
+    {
+      "uri": "spotify:episode:5fJXVByhFpqvpkNERxLsIL",
+      "showId": "3SPqd6V3AyxLV6rlqzRtB4",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:6FfLFXaDehrtdAsehMTr62",
+      "showId": "42ntT7XnfdbbYetUQu0vu5",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:6RdgR6k2CykUp25BrvMd0j",
+      "showId": "1QN1TOcYhAqgk5jDO3pPu6",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:6UUnSW5BP2Bf9jNDYM5Cm7",
+      "showId": "4X3yDKgVTWRjSd6r0vhgo4",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
+    },
+    {
+      "uri": "spotify:episode:6iFNlCZlAMUrU2lJmGpLws",
+      "showId": "51MrXc7hJQBE2WJf2g4aWN",
+      "releaseDate": "2026-11-23",
+      "addedAt": "2026-11-23T20:04:25.333Z"
     },
     {
       "uri": "spotify:episode:2JAETDDE6Cwc409ti72G30",
@@ -81,20 +225,8 @@
       "addedAt": "2026-11-22T16:10:28.502Z"
     },
     {
-      "uri": "spotify:episode:0lcAukUlzx1QsAncKhBBqw",
-      "showId": "2mTUnDkuKUkhiueKcVWoP0",
-      "releaseDate": "2026-11-21",
-      "addedAt": "2026-11-21T16:05:01.470Z"
-    },
-    {
       "uri": "spotify:episode:0vQzldicWd1U1uCCWR1Eik",
       "showId": "7syF2ry9j6nqYc656WHBA7",
-      "releaseDate": "2026-11-21",
-      "addedAt": "2026-11-21T16:05:01.470Z"
-    },
-    {
-      "uri": "spotify:episode:1b39H1mMRsmoU8hDj7nguS",
-      "showId": "3IM0lmZxpFAY7CwMuv9H4g",
       "releaseDate": "2026-11-21",
       "addedAt": "2026-11-21T16:05:01.470Z"
     },
@@ -105,22 +237,10 @@
       "addedAt": "2026-11-21T06:54:32.942Z"
     },
     {
-      "uri": "spotify:episode:3ZqHy6Xw78sRvga1zzU5V9",
-      "showId": "3pXx5SXzXwJxnf4A5pWN2A",
-      "releaseDate": "2026-11-21",
-      "addedAt": "2026-11-21T16:05:01.470Z"
-    },
-    {
       "uri": "spotify:episode:4C9m9Gox4Ef59MrEKXo2Np",
       "showId": "6trLZccWPOTavbIc8ge0f5",
       "releaseDate": "2026-11-21",
       "addedAt": "2026-11-22T06:29:25.705Z"
-    },
-    {
-      "uri": "spotify:episode:5drHxQwR2Z6GujJ2veDMPI",
-      "showId": "3SPqd6V3AyxLV6rlqzRtB4",
-      "releaseDate": "2026-11-21",
-      "addedAt": "2026-11-21T16:05:01.470Z"
     },
     {
       "uri": "spotify:episode:5qP62n2MOnthUIekUC5Pbw",
@@ -141,30 +261,6 @@
       "addedAt": "2026-11-21T16:05:01.470Z"
     },
     {
-      "uri": "spotify:episode:0FmIRkkUm5lEUrlxTORssN",
-      "showId": "7syF2ry9j6nqYc656WHBA7",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:0UHQvzvEnGVxltTjQuqygk",
-      "showId": "187EiGtyrelxJ8wXWEfVUa",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:0YwR57CQE7n8jXfDRnZYVK",
-      "showId": "5KIIXMgM9GTi5AepwOYvIZ",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-19T17:16:41.077Z"
-    },
-    {
-      "uri": "spotify:episode:0oogRvcwtWeUtkqdJvD8lk",
-      "showId": "3cNrL5nALTDuWbRfabHeOG",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
       "uri": "spotify:episode:17kxslvmtAurRg8H2ixMMg",
       "showId": "6NOJ6IkTb2GWMj1RpmtnxP",
       "releaseDate": "2026-11-20",
@@ -181,12 +277,6 @@
       "showId": "6f1qkZMOcZqT5UkPqG4U7L",
       "releaseDate": "2026-11-20",
       "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:1ZBbSNXvw3lbxSirLTIAMT",
-      "showId": "3cNrL5nALTDuWbRfabHeOG",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-22T06:29:25.705Z"
     },
     {
       "uri": "spotify:episode:1bYfX6CR6onbdotBAOqAJF",
@@ -211,104 +301,38 @@
       "showId": "6gcw7EF2i70vXXXJnhBNgA",
       "releaseDate": "2026-11-20",
       "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:2OfdcIJesTfmFi4inpYctF",
-      "showId": "4X3yDKgVTWRjSd6r0vhgo4",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:2mVLVL1URJ8BxxwQfdjQGR",
-      "showId": "0KxdEdeY2Wb3zr28dMlQva",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:2nawdAThDTTH0zcEsVaLMX",
-      "showId": "3oB5noYIwEB2dMAREj2F7S",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:3OvQkapVQaSo68HwsEjwzA",
-      "showId": "07SjDmKb9iliEzpNcN2xGD",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T06:58:44.172Z"
-    },
-    {
-      "uri": "spotify:episode:3ZETITUkeR0wyLHaIWdOJU",
-      "showId": "0l6uRgaiOnv8KP8B43bTSM",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:3mIz5p55Ny5uYDqBg4bJVL",
-      "showId": "5JGorGvdwljJHTl6wpMXN3",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:3p7U6CX1qCy71BdAGQEOPo",
-      "showId": "44fllCS2FTFr2x2kjP9xeT",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:42ipQ2sgk2MgguqexFY07S",
-      "showId": "51MrXc7hJQBE2WJf2g4aWN",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:46lvxYOYrPVbdFA989PwAw",
-      "showId": "187EiGtyrelxJ8wXWEfVUa",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:4MWJoRToAqK3AIqH1w5Aua",
-      "showId": "3THlGCNgIUa9fEyqtx7526",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:4eVZxE01d8lNcDiyxsGVN5",
-      "showId": "1ol0jP8hrNHydiAd38G6B1",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:4jUGPFkMFdo2yHKAdeAdn1",
-      "showId": "1QN1TOcYhAqgk5jDO3pPu6",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:4meOmBTP2CFfoJSXq9FSUe",
-      "showId": "4BIKBKIujizLHlIlBNaAqQ",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
-    },
-    {
-      "uri": "spotify:episode:5OAmLtfGlDZtBJixAtc63D",
-      "showId": "4FYpq3lSeQMAhqNI81O0Cn",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-21T06:54:32.942Z"
-    },
-    {
-      "uri": "spotify:episode:5rdRYh2l2OAIKOfdoVqRVX",
-      "showId": "5RllMBgvDnTau8nnsCUdse",
-      "releaseDate": "2026-11-20",
-      "addedAt": "2026-11-20T16:54:52.075Z"
     }
   ],
   "everAdded": [
+    "spotify:episode:0UfmO2SbUJxGDC1rQGdBTm",
+    "spotify:episode:0nVdmTocK9NhFKFJ5eKlL0",
+    "spotify:episode:0qGK5JzM5H3uXy6IrZNAIb",
+    "spotify:episode:1RBtXoXQi6z7U1OVAmd6ow",
+    "spotify:episode:1fYpqckf0DpEW0Ap4nlCE6",
+    "spotify:episode:1fkJqOhsBGjXBpnRWiurmz",
     "spotify:episode:1rm0QliTx8H49jPuk2JWr4",
+    "spotify:episode:1uunLZPtsnZWXggiKVA8XO",
+    "spotify:episode:1wRUV3JsJxKL4jqe0uXbcV",
+    "spotify:episode:2DMYeewsWP7s47OA5j7wVb",
+    "spotify:episode:32YtUlyqG0pjTRgk0jCJNW",
+    "spotify:episode:37Gvd5IQJnFgjOnadbLl6q",
+    "spotify:episode:3ErOLYz35K7JbAlKfVfJla",
+    "spotify:episode:3IBtbGGZ55RgHbJTCWFXSW",
+    "spotify:episode:3KzQa19Wwa1ZbtbGpE2Kpj",
     "spotify:episode:3UdmlQrnp58hF3LhpwWcyj",
     "spotify:episode:3dFhpVgqPZfWIukUDKDpS6",
+    "spotify:episode:3yOTYo1I4LebLeod0rZ2Re",
+    "spotify:episode:4AsIMeHSmPLEhFGXPsFQ8a",
+    "spotify:episode:4NTZJX0vKD25mIxrbZnOpv",
+    "spotify:episode:4ZDqaBObIEQr68g4oXT15u",
+    "spotify:episode:4mKPsCE6NwYHZc35L5LoPR",
     "spotify:episode:4zJA1VzkWPK9dvyTrrfqLs",
     "spotify:episode:5BdFqFzgcK547jjWhM537E",
+    "spotify:episode:5fJXVByhFpqvpkNERxLsIL",
+    "spotify:episode:6FfLFXaDehrtdAsehMTr62",
+    "spotify:episode:6RdgR6k2CykUp25BrvMd0j",
+    "spotify:episode:6UUnSW5BP2Bf9jNDYM5Cm7",
+    "spotify:episode:6iFNlCZlAMUrU2lJmGpLws",
     "spotify:episode:2JAETDDE6Cwc409ti72G30",
     "spotify:episode:2pHE7k0yO8SEM9dPKBpxnU",
     "spotify:episode:452TVkJ9kmAfoUTwxlp53B",
@@ -317,28 +341,28 @@
     "spotify:episode:5Oo1MP9Ryzqmk8Pl2u1nJF",
     "spotify:episode:6R8cNze4Oqn85kOcn80Y3N",
     "spotify:episode:6ueuKsAeYO3Uoxk4Ylo2N3",
-    "spotify:episode:0lcAukUlzx1QsAncKhBBqw",
     "spotify:episode:0vQzldicWd1U1uCCWR1Eik",
-    "spotify:episode:1b39H1mMRsmoU8hDj7nguS",
     "spotify:episode:38ohaofvESmOpBDsZL9PAt",
-    "spotify:episode:3ZqHy6Xw78sRvga1zzU5V9",
     "spotify:episode:4C9m9Gox4Ef59MrEKXo2Np",
-    "spotify:episode:5drHxQwR2Z6GujJ2veDMPI",
     "spotify:episode:5qP62n2MOnthUIekUC5Pbw",
     "spotify:episode:7iql6tGqDyYsTHWS0M9Pki",
     "spotify:episode:7q35NtlKiRTtWVXkccmQ1c",
-    "spotify:episode:0FmIRkkUm5lEUrlxTORssN",
-    "spotify:episode:0UHQvzvEnGVxltTjQuqygk",
-    "spotify:episode:0YwR57CQE7n8jXfDRnZYVK",
-    "spotify:episode:0oogRvcwtWeUtkqdJvD8lk",
     "spotify:episode:17kxslvmtAurRg8H2ixMMg",
     "spotify:episode:1JPzB3Rz0QsGNACF0TcLY3",
     "spotify:episode:1RnFzOQUEoXLWcUKZlNiEU",
-    "spotify:episode:1ZBbSNXvw3lbxSirLTIAMT",
     "spotify:episode:1bYfX6CR6onbdotBAOqAJF",
     "spotify:episode:1ezV7nOwjkjURq1fisGuxQ",
     "spotify:episode:1xiPCLpjS15hAdinMwdYjF",
     "spotify:episode:2IC6BpA46lvYPovWSvXBg0",
+    "spotify:episode:0lcAukUlzx1QsAncKhBBqw",
+    "spotify:episode:1b39H1mMRsmoU8hDj7nguS",
+    "spotify:episode:3ZqHy6Xw78sRvga1zzU5V9",
+    "spotify:episode:5drHxQwR2Z6GujJ2veDMPI",
+    "spotify:episode:0FmIRkkUm5lEUrlxTORssN",
+    "spotify:episode:0UHQvzvEnGVxltTjQuqygk",
+    "spotify:episode:0YwR57CQE7n8jXfDRnZYVK",
+    "spotify:episode:0oogRvcwtWeUtkqdJvD8lk",
+    "spotify:episode:1ZBbSNXvw3lbxSirLTIAMT",
     "spotify:episode:2OfdcIJesTfmFi4inpYctF",
     "spotify:episode:2mVLVL1URJ8BxxwQfdjQGR",
     "spotify:episode:2nawdAThDTTH0zcEsVaLMX",
@@ -1279,30 +1303,6 @@
     "spotify:episode:3ujGKh7tTo7mxylJjnCzE3",
     "spotify:episode:4Ej27PdGLWdv0iUKo4Tq15",
     "spotify:episode:4bVTxMO4yt2CyUG0eymdB8",
-    "spotify:episode:5suRM22Dd9TiJXWTjrheLx",
-    "spotify:episode:5tGwa60znDcLMWuOP2MbWS",
-    "spotify:episode:5vqNUfZoaKTmtmd36kMPM7",
-    "spotify:episode:6PP6zGVR5ldFgOVPHKBwod",
-    "spotify:episode:6eEC0PX4nMr1Sq4FVY2p2b",
-    "spotify:episode:6o3XWYv037k9nQBtkWtuDy",
-    "spotify:episode:77zHEXL9Mu3u1Ajk2qz1pa",
-    "spotify:episode:44KrnXp8HD5sLiqP2R5M4S",
-    "spotify:episode:4SLT8aTRrPOBu3A2D2vKiA",
-    "spotify:episode:4coa0xc14YTHW9bUXUV2CB",
-    "spotify:episode:7EbbhQIex0AxbdtLVM3DWZ",
-    "spotify:episode:7FJk55pJu1M2EpYLBZHcUQ",
-    "spotify:episode:7KRpp9lx8XXCkXxc5GEnYJ",
-    "spotify:episode:7awsYLrEaHz9ujun0BgM7C",
-    "spotify:episode:7subkjvIlkfLH5DKdWiv3M",
-    "spotify:episode:02i1YRITEp54kTlsBu6wCb",
-    "spotify:episode:031KKwSUCzpedkA85RgQnJ",
-    "spotify:episode:08zWvtQfWPLqdwRSYDDZiX",
-    "spotify:episode:0ECDs2A2blrAUI2b1Y0Oyr",
-    "spotify:episode:0X7HimOqcljgdTLSilQUPR",
-    "spotify:episode:18YRrp5IWvMJFBpNMzx0hs",
-    "spotify:episode:1H0MQ74SEQRvVWqer87tSa",
-    "spotify:episode:1Pqs66lCe6DN3NF7LD2BHW",
-    "spotify:episode:1Y5sRNzNvLfG6PqQ7TwVmy",
-    "spotify:episode:1cNWUUMF7hHueQjWD9lTS9"
+    "spotify:episode:5suRM22Dd9TiJXWTjrheLx"
   ]
 }
